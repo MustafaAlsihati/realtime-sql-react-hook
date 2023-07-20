@@ -26,4 +26,5 @@ module.exports = {
     'react/display-name': 0,
     'import/no-anonymous-default-export': 0,
   },
+  exclude: ['node_modules', 'lib'],
 };
