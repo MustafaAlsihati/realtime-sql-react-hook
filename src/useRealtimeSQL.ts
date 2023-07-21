@@ -4,7 +4,11 @@ function useRealtimeSQL<T>(
   url: string,
   query: string,
   params: string[] = [],
-  { token, initState }: { token?: string; initState?: T } = {},
+  {
+    token,
+    initState,
+    enabled = true,
+  }: { token?: string; initState?: T; enabled?: boolean } = {},
 ) {
   const webSocketRef = useRef<WebSocket | null>(null);
 
@@ -17,14 +21,13 @@ function useRealtimeSQL<T>(
       webSocketRef.current?.send(JSON.stringify({ query, params, token }));
     };
 
-    webSocketRef.current.onmessage = data => {
-      console.log({ data, type: typeof data });
-      // setState(JSON.parse(data));
+    webSocketRef.current.onmessage = (data: any) => {
+      setState(JSON.parse(data) as T);
     };
 
     webSocketRef.current.onclose = () => {
       console.log('WebSocket connection closed. Reconnecting...');
-      setTimeout(connectWebSocket, 1000);
+      setTimeout(connectWebSocket, 2000);
     };
 
     webSocketRef.current.onerror = error => {
@@ -35,13 +38,16 @@ function useRealtimeSQL<T>(
   }, [token]);
 
   useEffect(() => {
-    connectWebSocket();
-    return () => {
-      if (webSocketRef.current) {
-        webSocketRef.current.close();
-      }
-    };
-  }, [connectWebSocket]);
+    if (enabled) {
+      connectWebSocket();
+      return () => {
+        if (webSocketRef.current) {
+          webSocketRef.current.close();
+        }
+      };
+    }
+    return () => {};
+  }, [connectWebSocket, enabled]);
 
   return state;
 }
