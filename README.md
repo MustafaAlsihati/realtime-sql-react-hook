@@ -1,6 +1,6 @@
 # Realtime SQL React Hook
 
-Hook for connecting to a websocket that listens to SQL changes on a specific table passed from front-end (React) to your own custom websocket.
+React hook for connecting to a websocket that listens to SQL changes on a specific table by passing the table name and a condition and the parameters to your own custom websocket.
 
 **NOTE: You need to create your own websocket that will listen to table changes, this hook will only connect to your websocket from front-end side.**
 
