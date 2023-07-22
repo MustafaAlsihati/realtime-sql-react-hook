@@ -1,29 +1,37 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import useInternetStatus from './useInternetStatus';
 
+type OptionsProps<T> =
+  | {
+      token?: string;
+      initState?: T;
+      enabled?: boolean;
+    }
+  | undefined;
+
 function useRealtimeSQL<T>(
   url: string,
   table: string,
-  condition: string,
+  condition?: string,
   params: any[] = [],
-  {
-    token,
-    initState,
-    enabled = true,
-  }: { token?: string; initState?: T; enabled?: boolean } = {},
+  { token, initState, enabled = true }: OptionsProps<T> = {},
 ) {
   const internet = useInternetStatus();
   const webSocketRef = useRef<WebSocket | null>(null);
-
-  const [state, setState] = useState(initState);
+  const [state, setState] = useState(initState as T);
 
   const connectWebSocket = useCallback(() => {
+    if (!url || !table || !condition) return;
+
+    // * Url:
     const _url = new URL(url);
     if (token) {
       _url.searchParams.set('token', token);
     }
+    // * Open WebSocket connection:
     webSocketRef.current = new WebSocket(_url.toString());
 
+    // * Send Request data to WebSocket server:
     webSocketRef.current.onopen = () => {
       const payload = {
         table,
@@ -33,20 +41,25 @@ function useRealtimeSQL<T>(
       webSocketRef.current?.send(JSON.stringify(payload));
     };
 
-    webSocketRef.current.onmessage = (data: any) => {
-      setState(JSON.parse(data) as T);
+    // * Receive Response data from WebSocket server:
+    webSocketRef.current.onmessage = (data: MessageEvent<string>) => {
+      const result = JSON.parse(data?.data) as T;
+      if (result && Array.isArray(result)) {
+        setState(JSON.parse(data.data) as T);
+      }
     };
 
+    // * Handle WebSocket connection closed:
     webSocketRef.current.onclose = () => {
       console.log('WebSocket connection closed.');
     };
 
+    // * Handle WebSocket error:
     webSocketRef.current.onerror = error => {
       console.log('WebSocket error: ', error);
       webSocketRef.current?.close();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [condition, params, table, token, url]);
 
   useEffect(() => {
     if (enabled && internet) {
