@@ -1,24 +1,36 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
+import useInternetStatus from './useInternetStatus';
 
 function useRealtimeSQL<T>(
   url: string,
-  query: string,
-  params: string[] = [],
+  table: string,
+  condition: string,
+  params: any[] = [],
   {
     token,
     initState,
     enabled = true,
   }: { token?: string; initState?: T; enabled?: boolean } = {},
 ) {
+  const internet = useInternetStatus();
   const webSocketRef = useRef<WebSocket | null>(null);
 
   const [state, setState] = useState(initState);
 
   const connectWebSocket = useCallback(() => {
-    webSocketRef.current = new WebSocket(url);
+    const _url = new URL(url);
+    if (token) {
+      _url.searchParams.set('token', token);
+    }
+    webSocketRef.current = new WebSocket(_url.toString());
 
     webSocketRef.current.onopen = () => {
-      webSocketRef.current?.send(JSON.stringify({ query, params, token }));
+      const payload = {
+        table,
+        condition,
+        params,
+      };
+      webSocketRef.current?.send(JSON.stringify(payload));
     };
 
     webSocketRef.current.onmessage = (data: any) => {
@@ -38,7 +50,7 @@ function useRealtimeSQL<T>(
   }, [token]);
 
   useEffect(() => {
-    if (enabled) {
+    if (enabled && internet) {
       connectWebSocket();
       return () => {
         if (webSocketRef.current) {
@@ -47,7 +59,7 @@ function useRealtimeSQL<T>(
       };
     }
     return () => {};
-  }, [connectWebSocket, enabled]);
+  }, [connectWebSocket, enabled, internet]);
 
   return state;
 }
