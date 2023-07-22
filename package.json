@@ -1,6 +1,6 @@
 {
   "name": "realtime-sql-react-hook",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "React hook that connects to websocket for realtime SQL listener",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
