@@ -38,8 +38,7 @@ function useRealtimeSQL<T>(
     };
 
     webSocketRef.current.onclose = () => {
-      console.log('WebSocket connection closed. Reconnecting...');
-      setTimeout(connectWebSocket, 2000);
+      console.log('WebSocket connection closed.');
     };
 
     webSocketRef.current.onerror = error => {
