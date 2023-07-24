@@ -9,13 +9,14 @@ React hook for connecting to a websocket that listens to SQL changes on a specif
 ### Installation:
 
 ```
+npm i realtime-sql-react-hook
 yarn add realtime-sql-react-hook
 ```
 
 ### Usage:
 
 ```
-import {useRealtimeSQL} from 'realtime-sql-react-hook'
+import { useRealtimeSQL } from 'realtime-sql-react-hook'
 
 const App = () => {
   const token = user.token;
@@ -23,11 +24,13 @@ const App = () => {
   const data = useRealtimeSQL<User | null>(
     'ws://websocket.io',
     'users',
-    'WHERE id=? AND email=?',
+    'WHERE id = $1 AND email = $2',
     [user.id, user.email],
     {
       initState: null,
-      token
+      token, // optional
+      enabled: true, // optional
+      retryMs: 5000, // optional (default 5000ms)
     }
   );
 

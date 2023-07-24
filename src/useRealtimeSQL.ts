@@ -6,6 +6,7 @@ type OptionsProps<T> =
       token?: string;
       initState?: T;
       enabled?: boolean;
+      retryMs?: number;
     }
   | undefined;
 
@@ -14,14 +15,14 @@ function useRealtimeSQL<T>(
   table: string,
   condition?: string,
   params: any[] = [],
-  { token, initState, enabled = true }: OptionsProps<T> = {},
+  { token, initState, enabled = true, retryMs = 5000 }: OptionsProps<T> = {},
 ) {
   const internet = useInternetStatus();
   const webSocketRef = useRef<WebSocket | null>(null);
   const [state, setState] = useState(initState as T);
 
   const connectWebSocket = useCallback(() => {
-    if (!url || !table || !condition) return;
+    if (!url || !table || !condition || !internet) return;
 
     // * Url:
     const _url = new URL(url);
@@ -52,6 +53,7 @@ function useRealtimeSQL<T>(
     // * Handle WebSocket connection closed:
     webSocketRef.current.onclose = () => {
       console.log('WebSocket connection closed.');
+      setTimeout(connectWebSocket, retryMs); // Every 5 seconds
     };
 
     // * Handle WebSocket error:
@@ -59,10 +61,10 @@ function useRealtimeSQL<T>(
       console.log('WebSocket error: ', error);
       webSocketRef.current?.close();
     };
-  }, [condition, params, table, token, url]);
+  }, [condition, params, table, token, internet]);
 
   useEffect(() => {
-    if (enabled && internet) {
+    if (enabled) {
       connectWebSocket();
       return () => {
         if (webSocketRef.current) {
@@ -71,7 +73,7 @@ function useRealtimeSQL<T>(
       };
     }
     return () => {};
-  }, [connectWebSocket, enabled, internet]);
+  }, [connectWebSocket, enabled]);
 
   return state;
 }
